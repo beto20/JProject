@@ -4,9 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication(scanBasePackages = "{{ .BasePackages }}")
-public class {{ .ApplicationName }} {
+public class {{ .Name }} {
 
     public static void main(String[] args) {
-        SpringApplication.run({{ .ApplicationName }}.class, args);
+        SpringApplication.run({{ .Name }}.class, args);
     }
 }

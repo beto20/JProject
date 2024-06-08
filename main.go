@@ -13,10 +13,36 @@ func main() {
 
 }
 
-// TODO: create new func for pom root
-// TODO: create new func for main application class
-// TODO: refactor structs
 // TODO: refactor funcs generations
+// TODO: refactor structs
+
+
+type PomRootXmlTemplate struct {
+	ArtifactIdParent string
+	GroupIdParent    string
+	VersionParent    string
+	ArtifactId       string
+	GroupId          string
+	Version          string
+	Module           []Module
+	JavaVersion      int64
+	PomDepTmpl       []PomDependencyTemplate
+	Scm              Scm
+	Repository       Repository
+}
+type Module struct {
+	Name string
+}
+type Scm struct {
+	HasScm  bool
+	Project string
+}
+type Repository struct {
+	HasRepository bool
+	Id            string
+	Name          string
+	Url           string
+}
 
 type PomXmlTemplate struct {
 	ArtifactIdParent string
@@ -31,51 +57,23 @@ type PomDependencyTemplate struct {
 	ArtifactIdDependency string
 }
 
-//go:embed templates/monorepo/pom.tmpl
+type ApplicationTemplate struct {
+	Namespace    string
+	BasePackages string
+	Name         string
+}
+
+//go:embed templates/monorepo/pom.xml
 var pomXmlTemplate embed.FS
+
+//go:embed templates/multimodule/pom_root.xml
+var pomRootXmlTemplate embed.FS
+
+//go:embed templates/main_application.tmpl
+var applicationTemplate embed.FS
 
 //go:embed templates/multimodule/**
 var x embed.FS
-
-func generatePom(path string) {
-	pomXmlTmpl := PomXmlTemplate{
-		ArtifactIdParent: "ArtifactIdParentMOCK2",
-		GroupIdParent:    "GroupIdParentMOCK2",
-		VersionParent:    "0.181.0-1",
-		ArtifactId:       "ArtifactIdMOCK2",
-		PomDepTmpl: []PomDependencyTemplate{
-			{
-				GroupIdDependency:    "org.springframework.boot",
-				ArtifactIdDependency: "spring-boot-starter-data-jpa",
-			},
-			{
-				GroupIdDependency:    "org.2",
-				ArtifactIdDependency: "spring-boot-starter-3",
-			},
-		},
-	}
-
-	tmpl, err := template.ParseFS(pomXmlTemplate, "templates/monorepo/pom.tmpl")
-	if err != nil {
-		fmt.Print("Failed to parse template")
-	}
-
-	err = tmpl.ExecuteTemplate(os.Stdout, "pom.tmpl", pomXmlTmpl)
-	if err != nil {
-		fmt.Print("Failed to execute template")
-	}
-
-	file, err := os.Create(path)
-	if err != nil {
-		panic(err)
-	}
-
-	err = tmpl.Execute(file, pomXmlTmpl)
-	if err != nil {
-		fmt.Print("Failed to execute template, generate output file")
-	}
-}
-
 
 const (
 	commonPathTemp = "../output/"
@@ -98,8 +96,6 @@ func init() {
 
 	// generateProject(p)
 	generateBaseProject(p)
-	// pomPath := p.destinationPath + p.name + "/pom.xml"
-	// generatePom(pomPath)
 }
 
 func generateProject(p packages) {
@@ -115,7 +111,7 @@ func generateBaseProject(p packages) {
 	}
 
 	pomPath := projectPath + "/pom.xml"
-	generatePom(pomPath)
+	generateRootPom(pomPath)
 
 	multimoduleFlag := false
 	hexagonalFlag := true
@@ -129,6 +125,121 @@ func generateBaseProject(p packages) {
 		generatePackages(p, projectPath)
 		generatePackages2(p, projectPath)
 		generatePackages3(p, projectPath)
+	}
+}
+
+func generatePom(path string) {
+	pomXmlTmpl := PomXmlTemplate{
+		ArtifactIdParent: "ArtifactIdParentMOCK2",
+		GroupIdParent:    "GroupIdParentMOCK2",
+		VersionParent:    "0.181.0-1",
+		ArtifactId:       "ArtifactIdMOCK2",
+		GroupId:          "GroupIdMOCK2",
+		PomDepTmpl: []PomDependencyTemplate{
+			{
+				GroupIdDependency:    "org.springframework.boot",
+				ArtifactIdDependency: "spring-boot-starter-data-jpa",
+			},
+			{
+				GroupIdDependency:    "org.2",
+				ArtifactIdDependency: "spring-boot-starter-3",
+			},
+		},
+	}
+
+	tmpl, err := template.ParseFS(pomXmlTemplate, "templates/monorepo/pom.xml")
+	if err != nil {
+		fmt.Print("Failed to parse template")
+	}
+
+	err = tmpl.ExecuteTemplate(os.Stdout, "pom.xml", pomXmlTmpl)
+	if err != nil {
+		fmt.Print("Failed to execute template")
+	}
+
+	file, err := os.Create(path)
+	if err != nil {
+		panic(err)
+	}
+
+	err = tmpl.Execute(file, pomXmlTmpl)
+	if err != nil {
+		fmt.Print("Failed to execute template, generate output file")
+	}
+}
+
+func generateRootPom(path string) {
+
+	pomRootXmlTmpl := PomRootXmlTemplate{
+		ArtifactIdParent: "ArtifactIdParentMOCK2",
+		GroupIdParent:    "GroupIdParentMOCK2",
+		VersionParent:    "0.181.0-1",
+		ArtifactId:       "ArtifactIdMOCK2",
+		GroupId:          "GroupIdMOCK2",
+		Version:          "1.0.0",
+		Module: []Module{
+			{Name: "mock-app"},
+			{Name: "mock-core"},
+		},
+		JavaVersion: 11,
+		PomDepTmpl: []PomDependencyTemplate{
+			{
+				GroupIdDependency:    "org.springframework.boot",
+				ArtifactIdDependency: "spring-boot-starter-data-jpa",
+			},
+			{
+				GroupIdDependency:    "org.2",
+				ArtifactIdDependency: "spring-boot-starter-3",
+			},
+		},
+		Scm: Scm{
+			HasScm:  true,
+			Project: "bitbucket.mock-expedient",
+		},
+		Repository: Repository{
+			HasRepository: true,
+			Id:            "central",
+			Name:          "central mock",
+			Url:           "https://central-mock.com",
+		},
+	}
+
+	tmpl, err := template.ParseFS(pomRootXmlTemplate, "templates/multimodule/pom_root.xml")
+	if err != nil {
+		panic(err)
+	}
+
+	file, err := os.Create(path)
+	if err != nil {
+		panic(err)
+	}
+
+	err = tmpl.Execute(file, pomRootXmlTmpl)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func generateApplication(path string) {
+	applicationTmpl := ApplicationTemplate{
+		Namespace:    "pe.com.mock",
+		BasePackages: "pe.com",
+		Name:         "MockApplication",
+	}
+
+	tmpl, err := template.ParseFS(applicationTemplate, "templates/main_application.tmpl")
+	if err != nil {
+		panic(err)
+	}
+
+	file, err := os.Create(path)
+	if err != nil {
+		panic(err)
+	}
+
+	err = tmpl.Execute(file, applicationTmpl)
+	if err != nil {
+		panic(err)
 	}
 }
 
@@ -187,9 +298,10 @@ func generatePackages(packages packages, projectpath string) {
 				}
 			}
 		}
-
 		pomPath := module + "/pom.xml"
 		generatePom(pomPath)
+		applicationPath := module + "/MockApplication.java"
+		generateApplication(applicationPath)
 	}
 }
 
@@ -371,5 +483,7 @@ func generateOneProject(packages packages) {
 
 		pomPath := module + "/pom.xml"
 		generatePom(pomPath)
+		applicationPath := module + "/MockApplication.java"
+		generateApplication(applicationPath)
 	}
 }

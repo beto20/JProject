@@ -15,16 +15,14 @@
   <packaging>pom</packaging>
 
   <modules>
-    {{range .Module}}<module>{{.ModuleName}}</module>{{end}} 
+    {{range .Module}}<module>{{.Name}}</module>
+    {{end}} 
   </modules>
 
   <properties>
-    {{if eq .JavaVersion 11}}
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    {{if eq .JavaVersion 11}}<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
-    {{else}}
-    <java.version>17</java.version>{{end}}
+    <maven.compiler.target>11</maven.compiler.target>{{else}}<java.version>17</java.version>{{end}}
   </properties>
 
   <dependencies>
@@ -35,14 +33,12 @@
     </dependency>{{end}} 
   </dependencies>
 
-{{if .Scm.HasScm}}
-  <scm>
-    <url>https://{{.Scm.ScmProject}}/src/master/</url>
-    <connection>scm:git:https://{{.Scm.ScmProject}}.git</connection>
-    <developerConnection>scm:git:https://${env.APP_CREDENTIAL}:${env.APP_SECRET}@{{.Scm.ScmProject}}.git</developerConnection>
+  {{if .Scm.HasScm}}<scm>
+    <url>https://{{.Scm.Project}}/src/master/</url>
+    <connection>scm:git:https://{{.Scm.Project}}.git</connection>
+    <developerConnection>scm:git:https://${env.APP_CREDENTIAL}:${env.APP_SECRET}@{{.Scm.Project}}.git</developerConnection>
     <tag>HEAD</tag>
-  </scm>
-{{end}}
+  </scm>{{end}}
 
   <repositories>
     <repository>
@@ -54,13 +50,11 @@
         <enabled>false</enabled>
       </snapshots>
     </repository>
-    {{if .Repository.HasRepository}}
-    <repository>
-      <id>{{.Repository.RepositoryId}}</id>
-      <name>{{.Repository.RepositoryName}}</name>
-      <url>{{.Repository.RepositoryUrl}}</url>
-    </repository>
-    {{end}}
+    {{if .Repository.HasRepository}}<repository>
+      <id>{{.Repository.Id}}</id>
+      <name>{{.Repository.Name}}</name>
+      <url>{{.Repository.Url}}</url>
+    </repository>{{end}}
   </repositories>
 
   <build>
