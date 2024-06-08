@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <artifactId>{{ .ArtifactIdParent }}</artifactId>
+    <groupId>{{ .GroupIdParent }}</groupId>
+    <version>{{ .VersionParent }}</version>
+    <relativePath />
+  </parent>
+
+  <artifactId>{{ .ArtifactId }}</artifactId>
+  <groupId>{{ .GroupId }}</groupId>
+  <version>{{ .Version }}</version>
+  <packaging>pom</packaging>
+
+  <modules>
+    {{range .Module}}<module>{{.ModuleName}}</module>{{end}} 
+  </modules>
+
+  <properties>
+    {{if eq .JavaVersion 11}}
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    {{else}}
+    <java.version>17</java.version>{{end}}
+  </properties>
+
+  <dependencies>
+    {{range .PomDepTmpl}}
+    <dependency>
+      <groupId>{{.GroupIdDependency}}</groupId>
+      <artifactId>{{.ArtifactIdDependency}}</artifactId>
+    </dependency>{{end}} 
+  </dependencies>
+
+{{if .Scm.HasScm}}
+  <scm>
+    <url>https://{{.Scm.ScmProject}}/src/master/</url>
+    <connection>scm:git:https://{{.Scm.ScmProject}}.git</connection>
+    <developerConnection>scm:git:https://${env.APP_CREDENTIAL}:${env.APP_SECRET}@{{.Scm.ScmProject}}.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
+{{end}}
+
+  <repositories>
+    <repository>
+      <id>central</id>
+      <name>Central Repository</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+      <layout>default</layout>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    {{if .Repository.HasRepository}}
+    <repository>
+      <id>{{.Repository.RepositoryId}}</id>
+      <name>{{.Repository.RepositoryName}}</name>
+      <url>{{.Repository.RepositoryUrl}}</url>
+    </repository>
+    {{end}}
+  </repositories>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </build>
+</project>

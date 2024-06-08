@@ -1,0 +1,10 @@
+{{define "deps2"}}
+  {{range .PomDepTmpl}}
+      <dependencies>
+        <dependency>
+          <groupId>{{.GroupIdDependency}}</groupId>
+          <artifactId>{{.ArtifactIdDependency}}</artifactId>
+        </dependency>
+      </dependencies>
+  {{end}}
+{{end}} 
