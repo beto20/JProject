@@ -13,9 +13,8 @@ func main() {
 
 }
 
-// TODO: refactor funcs generations
+// TODO: refactor funcs generations LISTO
 // TODO: refactor structs
-
 
 type PomRootXmlTemplate struct {
 	ArtifactIdParent string
@@ -86,6 +85,12 @@ type packages struct {
 	destinationPath string
 }
 
+type config struct {
+	modu               string
+	namespace          string
+	requireApplication bool
+}
+
 func init() {
 	p := packages{
 		name:            "mock-expedient",
@@ -94,15 +99,16 @@ func init() {
 		destinationPath: commonPathTemp,
 	}
 
+	input := "hexagonal"
 	// generateProject(p)
-	generateBaseProject(p)
+	generateBaseProject(p, input)
 }
 
 func generateProject(p packages) {
 	generateOneProject(p)
 }
 
-func generateBaseProject(p packages) {
+func generateBaseProject(p packages, input string) {
 	projectPath := p.destinationPath + "mock-expedient"
 
 	err := os.Mkdir(projectPath, 0755)
@@ -113,18 +119,64 @@ func generateBaseProject(p packages) {
 	pomPath := projectPath + "/pom.xml"
 	generateRootPom(pomPath)
 
-	multimoduleFlag := false
-	hexagonalFlag := true
+	config := setProjectConfiguration(input)
+	generate(p, projectPath, config)
+}
 
-	if multimoduleFlag {
-		generatePackages(p, projectPath)
-		generatePackages2(p, projectPath)
+func setProjectConfiguration(input string) []config {
+	var c []config
+
+	if input == "hexagonal" {
+		c = []config{
+			{
+				modu:               "/mock-application",
+				namespace:          "/pe.mock.expedient.app",
+				requireApplication: false,
+			},
+			{
+				modu:               "/mock-domain",
+				namespace:          "/pe.mock.expedient.domain",
+				requireApplication: false,
+			},
+			{
+				modu:               "/mock-infrastructure",
+				namespace:          "/pe.mock.expedient.infra",
+				requireApplication: true,
+			},
+		}
 	}
 
-	if hexagonalFlag {
-		generatePackages(p, projectPath)
-		generatePackages2(p, projectPath)
-		generatePackages3(p, projectPath)
+	if input == "multimodule" {
+		c = []config{
+			{
+				modu:               "/mock-app",
+				namespace:          "/pe.mock.expedient.app",
+				requireApplication: true,
+			},
+			{
+				modu:               "/mock-core",
+				namespace:          "/pe.mock.expedient.core",
+				requireApplication: false,
+			},
+		}
+	}
+
+	if input == "monorepo" {
+		c = []config{
+			{
+				modu:               "/mock",
+				namespace:          "/pe.mock.expedient",
+				requireApplication: true,
+			},
+		}
+	}
+
+	return c
+}
+
+func generate(packages packages, projectPath string, project []config) {
+	for _, p := range project {
+		generatePackages(packages, projectPath, p.modu, p.namespace, p.requireApplication)
 	}
 }
 
@@ -243,11 +295,11 @@ func generateApplication(path string) {
 	}
 }
 
-func generatePackages(packages packages, projectpath string) {
+func generatePackages(packages packages, projectpath string, mod string, namespace string, requireApplication bool) {
 	var secondLayer = []string{"main", "test"}
 	var thirdLayer = []string{"java", "resources"}
 
-	module := projectpath + "/mock-application"
+	module := projectpath + mod
 
 	fmt.Print(module)
 
@@ -290,69 +342,7 @@ func generatePackages(packages packages, projectpath string) {
 				}
 
 				if thirdLayer[k] == "java" {
-					ns := main + "/pe.mock.expedient.app"
-					err = os.Mkdir(ns, 0755)
-					if err != nil {
-						panic(err)
-					}
-				}
-			}
-		}
-		pomPath := module + "/pom.xml"
-		generatePom(pomPath)
-		applicationPath := module + "/MockApplication.java"
-		generateApplication(applicationPath)
-	}
-}
-
-func generatePackages2(packages packages, projectpath string) {
-	var secondLayer = []string{"main", "test"}
-	var thirdLayer = []string{"java", "resources"}
-
-	module := projectpath + "/mock-domain"
-
-	fmt.Print(module)
-
-	err := os.Mkdir(module, 0755)
-	if err != nil {
-		panic(err)
-	}
-
-	for i := 0; i < 1; i++ {
-		p := module + "/src"
-
-		err := os.Mkdir(p, 0755)
-		if err != nil {
-			panic(err)
-		}
-		absPath, err := filepath.Abs(p)
-		if err != nil {
-			panic(err)
-		}
-
-		for j := 0; j < 2; j++ {
-			p = absPath + "/" + secondLayer[j]
-
-			err = os.Mkdir(p, 0755)
-			if err != nil {
-				panic(err)
-			}
-
-			newAbsPath, err := filepath.Abs(absPath + "/" + secondLayer[j])
-			if err != nil {
-				panic(err)
-			}
-
-			for k := 0; k < 2; k++ {
-				main := newAbsPath + "/" + thirdLayer[k]
-
-				err = os.Mkdir(main, 0755)
-				if err != nil {
-					panic(err)
-				}
-
-				if thirdLayer[k] == "java" {
-					ns := main + "/pe.mock.expedient.domain"
+					ns := main + namespace
 					err = os.Mkdir(ns, 0755)
 					if err != nil {
 						panic(err)
@@ -363,67 +353,11 @@ func generatePackages2(packages packages, projectpath string) {
 
 		pomPath := module + "/pom.xml"
 		generatePom(pomPath)
-	}
-}
 
-func generatePackages3(packages packages, projectpath string) {
-	var secondLayer = []string{"main", "test"}
-	var thirdLayer = []string{"java", "resources"}
-
-	module := projectpath + "/mock-infrastructure"
-
-	fmt.Print(module)
-
-	err := os.Mkdir(module, 0755)
-	if err != nil {
-		panic(err)
-	}
-
-	for i := 0; i < 1; i++ {
-		p := module + "/src"
-
-		err := os.Mkdir(p, 0755)
-		if err != nil {
-			panic(err)
+		if requireApplication {
+			applicationPath := module + "/MockApplication.java"
+			generateApplication(applicationPath)
 		}
-		absPath, err := filepath.Abs(p)
-		if err != nil {
-			panic(err)
-		}
-
-		for j := 0; j < 2; j++ {
-			p = absPath + "/" + secondLayer[j]
-
-			err = os.Mkdir(p, 0755)
-			if err != nil {
-				panic(err)
-			}
-
-			newAbsPath, err := filepath.Abs(absPath + "/" + secondLayer[j])
-			if err != nil {
-				panic(err)
-			}
-
-			for k := 0; k < 2; k++ {
-				main := newAbsPath + "/" + thirdLayer[k]
-
-				err = os.Mkdir(main, 0755)
-				if err != nil {
-					panic(err)
-				}
-
-				if thirdLayer[k] == "java" {
-					ns := main + "/pe.mock.expedient.infra"
-					err = os.Mkdir(ns, 0755)
-					if err != nil {
-						panic(err)
-					}
-				}
-			}
-		}
-
-		pomPath := module + "/pom.xml"
-		generatePom(pomPath)
 	}
 }
 
