@@ -13,8 +13,18 @@ func main() {
 
 }
 
-// TODO: refactor funcs generations LISTO
-// TODO: refactor structs
+// TODO: define input command line arguments
+
+type inputProject struct {
+	group       string
+	artifact    string
+	name        string
+	description string
+	packageName string
+	javaVersion string
+	destinyPath string
+	projectType string
+}
 
 type PomRootXmlTemplate struct {
 	ArtifactIdParent string
@@ -75,7 +85,7 @@ var applicationTemplate embed.FS
 var x embed.FS
 
 const (
-	commonPathTemp = "../output/"
+	commonPathTemp = ".../output/"
 )
 
 type packages struct {
@@ -93,34 +103,36 @@ type config struct {
 
 func init() {
 	p := packages{
-		name:            "mock-expedient",
+		name:            "mock-expedient1",
 		groupId:         "pe.mock.mock.expedient.app",
 		artifactId:      "app",
 		destinationPath: commonPathTemp,
 	}
 
-	input := "hexagonal"
-	// generateProject(p)
-	generateBaseProject(p, input)
+	input := "multimodule"
+	generateProject(p, input)
 }
 
-func generateProject(p packages) {
-	generateOneProject(p)
-}
+func generateProject(packages packages, input string) {
+	config := setProjectConfiguration(input)
+	var projectPath = ""
 
-func generateBaseProject(p packages, input string) {
-	projectPath := p.destinationPath + "mock-expedient"
-
-	err := os.Mkdir(projectPath, 0755)
-	if err != nil {
-		panic(err)
+	if input == "module" {
+		projectPath = packages.destinationPath
+	} else {
+		projectPath = packages.destinationPath + packages.name
+		err := os.Mkdir(projectPath, 0755)
+		if err != nil {
+			panic(err)
+		}
 	}
 
-	pomPath := projectPath + "/pom.xml"
-	generateRootPom(pomPath)
+	generate(projectPath, config)
 
-	config := setProjectConfiguration(input)
-	generate(p, projectPath, config)
+	if input != "monorepo" && input != "module" {
+		pomPath := projectPath + "/pom.xml"
+		generateRootPom(pomPath)
+	}
 }
 
 func setProjectConfiguration(input string) []config {
@@ -164,9 +176,19 @@ func setProjectConfiguration(input string) []config {
 	if input == "monorepo" {
 		c = []config{
 			{
-				modu:               "/mock",
+				modu:               "",
 				namespace:          "/pe.mock.expedient",
 				requireApplication: true,
+			},
+		}
+	}
+
+	if input == "module" {
+		c = []config{
+			{
+				modu:               "new-mod-3",
+				namespace:          "/pe.mock.expedient",
+				requireApplication: false,
 			},
 		}
 	}
@@ -174,9 +196,11 @@ func setProjectConfiguration(input string) []config {
 	return c
 }
 
-func generate(packages packages, projectPath string, project []config) {
+func generate(projectPath string, project []config) {
 	for _, p := range project {
-		generatePackages(packages, projectPath, p.modu, p.namespace, p.requireApplication)
+		generatePackages(projectPath, p)
+		pom(projectPath, p.modu)
+		app(projectPath, p)
 	}
 }
 
@@ -295,129 +319,77 @@ func generateApplication(path string) {
 	}
 }
 
-func generatePackages(packages packages, projectpath string, mod string, namespace string, requireApplication bool) {
-	var secondLayer = []string{"main", "test"}
-	var thirdLayer = []string{"java", "resources"}
+func generatePackages(projectpath string, c config) {
+	module := projectpath + c.modu
 
-	module := projectpath + mod
+	if c.modu != "" {
+		err := os.Mkdir(module, 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
 
-	fmt.Print(module)
+	p := module + "/src"
 
-	err := os.Mkdir(module, 0755)
+	err := os.Mkdir(p, 0755)
 	if err != nil {
 		panic(err)
 	}
 
-	for i := 0; i < 1; i++ {
-		p := module + "/src"
+	buildSrc(p, c)
+}
 
-		err := os.Mkdir(p, 0755)
-		if err != nil {
-			panic(err)
-		}
-		absPath, err := filepath.Abs(p)
-		if err != nil {
-			panic(err)
-		}
+func pom(projectpath string, c string) {
+	module := projectpath + c
+	pomPath := module + "/pom.xml"
+	generatePom(pomPath)
+}
 
-		for j := 0; j < 2; j++ {
-			p = absPath + "/" + secondLayer[j]
-
-			err = os.Mkdir(p, 0755)
-			if err != nil {
-				panic(err)
-			}
-
-			newAbsPath, err := filepath.Abs(absPath + "/" + secondLayer[j])
-			if err != nil {
-				panic(err)
-			}
-
-			for k := 0; k < 2; k++ {
-				main := newAbsPath + "/" + thirdLayer[k]
-
-				err = os.Mkdir(main, 0755)
-				if err != nil {
-					panic(err)
-				}
-
-				if thirdLayer[k] == "java" {
-					ns := main + namespace
-					err = os.Mkdir(ns, 0755)
-					if err != nil {
-						panic(err)
-					}
-				}
-			}
-		}
-
-		pomPath := module + "/pom.xml"
-		generatePom(pomPath)
-
-		if requireApplication {
-			applicationPath := module + "/MockApplication.java"
-			generateApplication(applicationPath)
-		}
+func app(projectpath string, c config) {
+	module := projectpath + c.modu
+	if c.requireApplication {
+		applicationPath := module + "/src/main/java/" + c.namespace + "/MockApplication.java"
+		generateApplication(applicationPath)
 	}
 }
 
-func generateOneProject(packages packages) {
-	var secondLayer = []string{"main", "test"}
-	var thirdLayer = []string{"java", "resources"}
+func buildSrc(p string, c config) {
+	var firstLayer = []string{"main", "test"}
+	var secondLayer = []string{"java", "resources"}
 
-	module := packages.destinationPath + packages.name
-
-	err := os.Mkdir(module, 0755)
+	absPath, err := filepath.Abs(p)
 	if err != nil {
 		panic(err)
 	}
 
-	for i := 0; i < 1; i++ {
-		p := module + "/src"
+	for i := 0; i < 2; i++ {
+		p = absPath + "/" + firstLayer[i]
 
-		err := os.Mkdir(p, 0755)
+		err = os.Mkdir(p, 0755)
 		if err != nil {
 			panic(err)
 		}
-		absPath, err := filepath.Abs(p)
+
+		newAbsPath, err := filepath.Abs(p)
 		if err != nil {
 			panic(err)
 		}
 
 		for j := 0; j < 2; j++ {
-			p = absPath + "/" + secondLayer[j]
+			np := newAbsPath + "/" + secondLayer[j]
 
-			err = os.Mkdir(p, 0755)
+			err = os.Mkdir(np, 0755)
 			if err != nil {
 				panic(err)
 			}
 
-			newAbsPath, err := filepath.Abs(absPath + "/" + secondLayer[j])
-			if err != nil {
-				panic(err)
-			}
-
-			for k := 0; k < 2; k++ {
-				main := newAbsPath + "/" + thirdLayer[k]
-
-				err = os.Mkdir(main, 0755)
+			if secondLayer[j] == "java" {
+				ns := np + c.namespace
+				err = os.Mkdir(ns, 0755)
 				if err != nil {
 					panic(err)
 				}
-
-				if thirdLayer[k] == "java" {
-					ns := main + "/" + packages.groupId
-					err = os.Mkdir(ns, 0755)
-					if err != nil {
-						panic(err)
-					}
-				}
 			}
 		}
-
-		pomPath := module + "/pom.xml"
-		generatePom(pomPath)
-		applicationPath := module + "/MockApplication.java"
-		generateApplication(applicationPath)
 	}
 }
