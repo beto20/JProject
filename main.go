@@ -7,11 +7,9 @@ import (
 	"os"
 	"path/filepath"
 	"text/template"
+
+	"github.com/beto20/jproject/command"
 )
-
-func main() {
-
-}
 
 // TODO: define input command line arguments
 
@@ -101,7 +99,15 @@ type config struct {
 	requireApplication bool
 }
 
-func init() {
+func main() {
+
+	if err := command.Root(os.Args[1:]); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
+
+func init2() {
 	p := packages{
 		name:            "mock-expedient1",
 		groupId:         "pe.mock.mock.expedient.app",
