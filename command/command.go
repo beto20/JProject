@@ -5,11 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
+
+	"github.com/beto20/jproject/application"
 )
 
 type Command struct {
-	fs *flag.FlagSet
-
+	fs          *flag.FlagSet
 	group       string
 	artifact    string
 	name        string
@@ -34,61 +35,69 @@ type input struct {
 
 type Runner interface {
 	Init([]string) error
-	Run() error
 	Name() string
+	Run() error
 }
 
 func NewCommand() *Command {
-	gc := &Command{
-		fs: flag.NewFlagSet("mm", flag.ContinueOnError),
+
+	c := &Command{
+		fs: flag.NewFlagSet("hex", flag.ContinueOnError),
 	}
 
-	gc.fs.StringVar(&gc.group, "g", "DEFAULT_TEST", "")
-	gc.fs.StringVar(&gc.artifact, "a", "DEFAULT_TEST", "")
-	gc.fs.StringVar(&gc.name, "n", "DEFAULT_TEST", "description")
-	gc.fs.StringVar(&gc.description, "d", "DEFAULT_TEST", "")
-	gc.fs.StringVar(&gc.packageName, "pk", "DEFAULT_TEST", "")
-	gc.fs.StringVar(&gc.javaVersion, "jv", "DEFAULT_TEST", "")
-	gc.fs.StringVar(&gc.destinyPath, "dp", "DEFAULT_TEST", "")
-	gc.fs.StringVar(&gc.prefix, "p", "DEFAULT_TEST", "")
+	c.fs.StringVar(&c.group, "g", "DEFAULT_TEST", "")
+	c.fs.StringVar(&c.artifact, "a", "DEFAULT_TEST", "")
+	c.fs.StringVar(&c.name, "n", "DEFAULT_TEST", "description")
+	c.fs.StringVar(&c.description, "d", "DEFAULT_TEST", "")
+	c.fs.StringVar(&c.packageName, "pk", "DEFAULT_TEST", "")
+	c.fs.StringVar(&c.javaVersion, "jv", "DEFAULT_TEST", "")
+	c.fs.StringVar(&c.destinyPath, "dp", "DEFAULT_TEST", "")
+	c.fs.StringVar(&c.prefix, "p", "DEFAULT_TEST", "")
 
-	return gc
+	return c
 }
 
-func (g *Command) Init(args []string) error {
-	return g.fs.Parse(args)
+func (c *Command) Init(args []string) error {
+	return c.fs.Parse(args)
 }
 
-func (g *Command) Run() error {
+func (c *Command) Name() string {
+	return c.fs.Name()
+}
 
-	i := input{
-		group:       g.group,
-		artifact:    g.artifact,
-		name:        g.name,
-		description: g.description,
-		packageName: g.packageName,
-		javaVersion: g.javaVersion,
-		destinyPath: g.destinyPath,
-		projectType: "monorepo",
-		prefix:      g.prefix,
-	}
+func (c *Command) Run() error {
 
-	fmt.Println("-g", i.group)
-	fmt.Println("-a", i.artifact)
-	fmt.Println("-n", i.name)
-	fmt.Println("-d", i.description)
-	fmt.Println("-pk", i.packageName)
-	fmt.Println("-jv", i.javaVersion)
-	fmt.Println("-dp", i.destinyPath)
-	fmt.Println("-p", i.prefix)
+	// i := input{
+	// 	group:       c.group,
+	// 	artifact:    c.artifact,
+	// 	name:        c.name,
+	// 	description: c.description,
+	// 	packageName: c.packageName,
+	// 	javaVersion: c.javaVersion,
+	// 	destinyPath: c.destinyPath,
+	// 	projectType: "multimodule",
+	// 	prefix:      c.prefix,
+	// }
 
-	// TODO: integrate with the project generator core
+	// application.GenerateProject(toApplicationInput(i))
 
 	return nil
 }
 
-func (g *Command) Name() string {
-	return g.fs.Name()
+func toApplicationInput(i input) application.Input {
+	appInput := application.Input{
+		Group:       i.group,
+		Artifact:    i.artifact,
+		Name:        i.name,
+		Description: i.description,
+		PackageName: i.packageName,
+		JavaVersion: i.javaVersion,
+		DestinyPath: i.destinyPath,
+		ProjectType: i.projectType,
+		Prefix:      i.prefix,
+	}
+
+	return appInput
 }
 
 func Root(args []string) error {
@@ -96,12 +105,11 @@ func Root(args []string) error {
 		return errors.New("You must pass a sub-command")
 	}
 
+	subcommand := os.Args[1]
+
 	cmds := []Runner{
 		NewCommand(),
 	}
-	fmt.Println("cmds:", cmds)
-
-	subcommand := os.Args[1]
 
 	fmt.Println("subcommand:", subcommand)
 
