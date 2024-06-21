@@ -489,34 +489,3 @@ func buildSrc(p string, c config) {
 		}
 	}
 }
-
-func help() {
-
-	helpCommand := `
-	*************************************************************************************
-	*         					    	JProject										*
-	*************************************************************************************
-	*         					    	Subcommand										*
-	* help				-h		show all commands descriptions   						*
-	* monorepo			-mr		generate a monorepo project   							*
-	* module			-m		generate an empty module    							*
-	* multimodule		-mm		generate a multimodule project (app and core mods)   	*
-	* hexagonal			-hex	generate a hexagonal project (infra, app and domain)   	*
-	*************************************************************************************
-	*         					    	Flags											*
-	* Important advice: for each generate subcommand you must specify any flag			*
-	* groupId			-g		project groupId					   		requiered		*
-	* artifactId		-a		project artifactId   					requiered		*
-	* name				-n		project name   							optional		*
-	* description		-d		project description   					optional		*
-	* package			-pk		project package   						requiered		*
-	* project prefix	-p		project prefix just for mm and hex 		requiered		*
-	* java version		-jv		project java version (8 or 11)   		requiered		*
-	* directory path	-dp		ubication of project generated   		requiered		*
-	*************************************************************************************
-	
-	supported by av
-	`
-
-	fmt.Println(helpCommand)
-}
